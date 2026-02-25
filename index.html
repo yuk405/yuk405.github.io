@@ -4,131 +4,534 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>个人网站</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --gradient-primary: linear-gradient(135deg, #3498db, #2980b9);
+            --gradient-secondary: linear-gradient(135deg, #2c3e50, #34495e);
+        }
+        * {
             margin: 0;
             padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
         }
         .profile-card {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            text-align: center;
-            width: 300px;
+            background-color: var(--card-background);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 50px;
+            margin-bottom: 30px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
         }
-        .profile-img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 20px;
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+        .profile-card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-5px);
         }
         h1 {
-            color: #333;
-            margin-bottom: 20px;
+            color: var(--secondary-color);
+            margin-bottom: 40px;
+            text-align: center;
+            font-size: 2.8rem;
+            font-weight: 700;
+            position: relative;
+            padding-bottom: 20px;
+        }
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--gradient-primary);
+            border-radius: 2px;
+        }
+        h2 {
+            color: var(--secondary-color);
+            margin-top: 50px;
+            margin-bottom: 30px;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px;
+            font-size: 1.6rem;
+            font-weight: 600;
+            position: relative;
+        }
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 80px;
+            height: 3px;
+            background: var(--gradient-primary);
         }
         .info-item {
-            margin: 10px 0;
-            color: #666;
+            margin: 15px 0;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        .info-item i {
+            color: var(--primary-color);
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
         }
         .info-label {
-            font-weight: bold;
-            color: #333;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-right: 10px;
+            min-width: 80px;
         }
         form {
             text-align: left;
+            margin-bottom: 40px;
+            padding: 35px;
+            background-color: rgba(248, 249, 250, 0.9);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+        }
+        form:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 25px;
         }
         label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #333;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+        }
+        label i {
+            color: var(--primary-color);
+            margin-right: 8px;
         }
         input[type="text"], input[type="tel"] {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
+            padding: 14px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            font-family: inherit;
+            background-color: white;
+        }
+        input[type="text"]:focus, input[type="tel"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+            transform: translateY(-1px);
         }
         input[type="radio"] {
-            margin-right: 5px;
+            margin-right: 10px;
+            accent-color: var(--primary-color);
+            transform: scale(1.2);
         }
         .radio-group {
             display: flex;
-            gap: 15px;
+            gap: 25px;
+            align-items: center;
+            padding: 10px 0;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            font-weight: 400;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .radio-group label:hover {
+            color: var(--primary-color);
+            transform: translateX(5px);
         }
         button {
             width: 100%;
-            padding: 10px;
-            background-color: #4CAF50;
+            padding: 14px 24px;
+            background: var(--gradient-primary);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: var(--transition);
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: var(--transition);
+        }
+        button:hover::before {
+            left: 100%;
         }
         button:hover {
-            background-color: #45a049;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
         }
         #result {
+            margin-top: 30px;
+            padding: 35px;
+            background-color: rgba(248, 249, 250, 0.9);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
             margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
+        }
+        .button-group button {
+            flex: 1;
+            padding: 12px 20px;
+            background: var(--gradient-secondary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .button-group button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: var(--transition);
+        }
+        .button-group button:hover::before {
+            left: 100%;
+        }
+        .button-group button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(44, 62, 80, 0.4);
+        }
+        .section {
+            margin-bottom: 50px;
+            animation: slideUp 0.6s ease-out;
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .education-item, .project-item, .portfolio-item {
+            margin-bottom: 30px;
+            padding: 25px;
+            background-color: rgba(248, 249, 250, 0.9);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .education-item::before, .project-item::before, .portfolio-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient-primary);
+        }
+        .education-item:hover, .project-item:hover, .portfolio-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+        .education-item h3, .project-item h3, .portfolio-item h3 {
+            margin-top: 0;
+            color: var(--secondary-color);
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .education-item h3 i, .project-item h3 i, .portfolio-item h3 i {
+            color: var(--primary-color);
+            margin-right: 12px;
+        }
+        .education-item p, .project-item p, .portfolio-item p {
+            margin: 10px 0;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+        .education-item p strong, .project-item p strong, .portfolio-item p strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .skill-item {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+        .skill-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: var(--transition);
+        }
+        .skill-item:hover::before {
+            left: 100%;
+        }
+        .skill-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 16px rgba(52, 152, 219, 0.4);
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: var(--transition);
+            position: relative;
+        }
+        a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+            transition: var(--transition);
+        }
+        a:hover::after {
+            width: 100%;
+        }
+        a:hover {
+            color: #2980b9;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+            .profile-card {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 2.2rem;
+            }
+            h2 {
+                font-size: 1.4rem;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+            .radio-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .skills-list {
+                gap: 10px;
+            }
+            .skill-item {
+                padding: 8px 18px;
+                font-size: 0.85rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="profile-card">
-        <h1>个人信息</h1>
-        
-        <form id="profileForm">
-            <div class="form-group">
-                <label for="name">名字：</label>
-                <input type="text" id="name" name="name" required>
+    <div class="container">
+        <div class="profile-card">
+            <h1>个人网站</h1>
+            
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="name"><i class="fas fa-user"></i> 名字：</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-venus-mars"></i> 性别：</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="gender" value="男" checked> 男</label>
+                        <label><input type="radio" name="gender" value="女"> 女</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="phone"><i class="fas fa-phone-alt"></i> 电话号码：</label>
+                    <input type="tel" id="phone" name="phone" required>
+                </div>
+                <button type="submit"><i class="fas fa-paper-plane"></i> 提交</button>
+                <div class="button-group">
+                    <button onclick="window.open('https://unwillingness.github.io/zhx.github.io/', '_blank')"><i class="fas fa-link"></i> zhx</button>
+                    <button onclick="window.open('https://xzc7777777.github.io/7/', '_blank')"><i class="fas fa-link"></i> xzc</button>
+                    <button onclick="window.open('https://siesta1305539782-png.github.io/nina-Repository/', '_blank')"><i class="fas fa-link"></i> ljq</button>
+                </div>
+            </form>
+            
+            <div id="result" style="display: none;">
+                <h2><i class="fas fa-id-card"></i> 个人信息</h2>
+                <div class="info-item">
+                    <i class="fas fa-user"></i>
+                    <span class="info-label">名字：</span> <span id="displayName"></span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-venus-mars"></i>
+                    <span class="info-label">性别：</span> <span id="displayGender"></span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <span class="info-label">电话号码：</span> <span id="displayPhone"></span>
+                </div>
+                <button onclick="editInfo()" style="margin-top: 15px;"><i class="fas fa-edit"></i> 修改信息</button>
             </div>
-            <div class="form-group">
-                <label>性别：</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="gender" value="男" checked> 男</label>
-                    <label><input type="radio" name="gender" value="女"> 女</label>
+            
+            <div class="section">
+                <h2><i class="fas fa-graduation-cap"></i> 教育经历</h2>
+                <div class="education-item">
+                    <h3><i class="fas fa-university"></i> 本科 - 计算机科学与技术</h3>
+                    <p><strong>学校：</strong>北京大学</p>
+                    <p><strong>时间：</strong>2020年9月 - 2024年6月</p>
+                    <p><strong>成绩：</strong>GPA 3.8/4.0</p>
+                </div>
+                <div class="education-item">
+                    <h3><i class="fas fa-university"></i> 硕士 - 人工智能</h3>
+                    <p><strong>学校：</strong>清华大学</p>
+                    <p><strong>时间：</strong>2024年9月 - 2027年6月</p>
+                    <p><strong>方向：</strong>机器学习与深度学习</p>
                 </div>
             </div>
-            <div class="form-group">
-                <label for="phone">电话号码：</label>
-                <input type="tel" id="phone" name="phone" required>
+            
+            <div class="section">
+                <h2><i class="fas fa-tools"></i> 技能清单</h2>
+                <div class="skills-list">
+                    <span class="skill-item"><i class="fab fa-python"></i> Python</span>
+                    <span class="skill-item"><i class="fab fa-java"></i> Java</span>
+                    <span class="skill-item"><i class="fas fa-code"></i> C++</span>
+                    <span class="skill-item"><i class="fab fa-js"></i> JavaScript</span>
+                    <span class="skill-item"><i class="fab fa-html5"></i> HTML/CSS</span>
+                    <span class="skill-item"><i class="fas fa-brain"></i> 机器学习</span>
+                    <span class="skill-item"><i class="fas fa-network-wired"></i> 深度学习</span>
+                    <span class="skill-item"><i class="fas fa-chart-bar"></i> 数据分析</span>
+                    <span class="skill-item"><i class="fas fa-database"></i> 数据库</span>
+                    <span class="skill-item"><i class="fas fa-cogs"></i> 算法设计</span>
+                </div>
             </div>
-            <button type="submit">提交</button>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button onclick="window.open('https://unwillingness.github.io/zhx.github.io/', '_blank')" style="padding: 8px 16px; background-color: #9c27b0; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">zhx</button>
-                <button style="padding: 8px 16px; background-color: #9c27b0; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">xzc</button>
-                <button style="padding: 8px 16px; background-color: #9c27b0; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">ljq</button>
+            
+            <div class="section">
+                <h2><i class="fas fa-project-diagram"></i> 项目经历</h2>
+                <div class="project-item">
+                    <h3><i class="fas fa-thumbs-up"></i> 智能推荐系统</h3>
+                    <p><strong>时间：</strong>2023年3月 - 2023年6月</p>
+                    <p><strong>描述：</strong>基于协同过滤和深度学习的推荐系统，提升用户体验和点击率。</p>
+                    <p><strong>技术：</strong>Python, TensorFlow, scikit-learn</p>
+                </div>
+                <div class="project-item">
+                    <h3><i class="fas fa-laptop-code"></i> 在线教育平台</h3>
+                    <p><strong>时间：</strong>2022年9月 - 2023年1月</p>
+                    <p><strong>描述：</strong>开发在线课程管理系统，支持视频播放、作业提交和互动讨论。</p>
+                    <p><strong>技术：</strong>Java, Spring Boot, Vue.js, MySQL</p>
+                </div>
             </div>
-        </form>
-        
-        <div id="result" style="display: none;">
-            <h2>您的信息</h2>
-            <div class="info-item">
-                <span class="info-label">名字：</span> <span id="displayName"></span>
+            
+            <div class="section">
+                <h2><i class="fas fa-briefcase"></i> 个人作品集</h2>
+                <div class="portfolio-item">
+                    <h3><i class="fas fa-blog"></i> 个人博客网站</h3>
+                    <p><strong>描述：</strong>使用React和Node.js开发的个人技术博客，支持Markdown编辑和评论功能。</p>
+                    <p><strong>链接：</strong><a href="#"><i class="fas fa-external-link-alt"></i> https://blog.example.com</a></p>
+                </div>
+                <div class="portfolio-item">
+                    <h3><i class="fas fa-chart-line"></i> 数据可视化工具</h3>
+                    <p><strong>描述：</strong>基于D3.js的交互式数据可视化工具，支持多种图表类型和数据导入。</p>
+                    <p><strong>链接：</strong><a href="#"><i class="fas fa-external-link-alt"></i> https://visualization.example.com</a></p>
+                </div>
             </div>
-            <div class="info-item">
-                <span class="info-label">性别：</span> <span id="displayGender"></span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">电话号码：</span> <span id="displayPhone"></span>
-            </div>
-            <button onclick="editInfo()" style="margin-top: 15px;">修改信息</button>
         </div>
     </div>
     
