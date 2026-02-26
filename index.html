@@ -498,6 +498,64 @@
         .back-to-top:hover i {
             transform: translateY(-2px);
         }
+        .navbar {
+            background: var(--card-background);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .navbar-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .navbar-logo:hover {
+            color: var(--accent-color);
+            transform: none;
+        }
+        .navbar-logo:hover::after {
+            width: 0;
+        }
+        .navbar-menu {
+            display: flex;
+            gap: 30px;
+        }
+        .navbar-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+        }
+        .navbar-link:hover {
+            color: var(--accent-color);
+            transform: none;
+        }
+        .navbar-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-secondary);
+            transition: var(--transition);
+        }
+        .navbar-link:hover::after {
+            width: 100%;
+        }
         .theme-toggle {
             position: fixed;
             top: 30px;
@@ -552,9 +610,31 @@
         body.dark-mode .skill-item::before {
             background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
         }
+        body.dark-mode .navbar {
+            background: #1e293b;
+            border-bottom-color: #334155;
+        }
+        body.dark-mode .navbar-logo {
+            color: #f8fafc;
+        }
+        body.dark-mode .navbar-link {
+            color: #cbd5e1;
+        }
         @media (max-width: 768px) {
             .container {
                 padding: 20px 15px;
+            }
+            .navbar-container {
+                padding: 15px 15px;
+            }
+            .navbar-logo {
+                font-size: 1.3rem;
+            }
+            .navbar-menu {
+                gap: 20px;
+            }
+            .navbar-link {
+                font-size: 0.9rem;
             }
             .profile-card {
                 padding: 40px 20px;
@@ -606,6 +686,18 @@
             }
         }
         @media (max-width: 480px) {
+            .navbar-container {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            .navbar-menu {
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+            .navbar-link {
+                font-size: 0.8rem;
+            }
             h1 {
                 font-size: 2rem;
             }
@@ -685,6 +777,18 @@
     <div class="theme-toggle" id="themeToggle">
         <i class="fas fa-moon"></i>
     </div>
+    
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="#" class="navbar-logo">专业开发者</a>
+            <div class="navbar-menu">
+                <a href="#education" class="navbar-link">教育经历</a>
+                <a href="#skills" class="navbar-link">技能清单</a>
+                <a href="#projects" class="navbar-link">项目经历</a>
+                <a href="#portfolio" class="navbar-link">个人作品集</a>
+            </div>
+        </div>
+    </nav>
     
     <div class="container">
         <div class="profile-card">
