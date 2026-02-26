@@ -198,6 +198,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            transition: var(--transition);
         }
         @keyframes slideInLeft {
             from {
@@ -217,10 +218,21 @@
             width: 100px;
             height: 3px;
             background: var(--gradient-secondary);
+            transition: var(--transition);
         }
         h2 i {
             color: var(--accent-color);
             font-size: 1.5rem;
+            transition: var(--transition);
+        }
+        h2:hover {
+            color: var(--accent-color);
+        }
+        h2:hover i {
+            transform: scale(1.2) rotate(15deg);
+        }
+        h2:hover::after {
+            width: 150px;
         }
         .section {
             margin-bottom: 70px;
@@ -261,6 +273,17 @@
             overflow: hidden;
             animation: fadeInUp 0.8s ease-out;
             box-shadow: var(--shadow);
+        }
+        .education-item:hover, .project-item:hover, .portfolio-item:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-hover);
+            border-color: var(--accent-color);
+        }
+        .education-item:hover h3, .project-item:hover h3, .portfolio-item:hover h3 {
+            color: var(--accent-color);
+        }
+        .education-item:hover h3 i, .project-item:hover h3 i, .portfolio-item:hover h3 i {
+            transform: scale(1.2);
         }
         @keyframes fadeInUp {
             from {
@@ -375,6 +398,7 @@
             transition: var(--transition);
             position: relative;
             font-weight: 500;
+            display: inline-block;
         }
         a::after {
             content: '';
@@ -392,6 +416,9 @@
         a:hover {
             color: var(--accent-color);
             transform: translateX(5px);
+        }
+        a:hover i {
+            transform: scale(1.2) rotate(15deg);
         }
         .footer-buttons {
             margin-top: 100px;
@@ -555,6 +582,35 @@
         }
         .navbar-link:hover::after {
             width: 100%;
+        }
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--background-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+        .loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loader-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--border-color);
+            border-top: 5px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         .theme-toggle {
             position: fixed;
@@ -774,6 +830,10 @@
     </style>
 </head>
 <body>
+    <div class="loader">
+        <div class="loader-spinner"></div>
+    </div>
+    
     <div class="theme-toggle" id="themeToggle">
         <i class="fas fa-moon"></i>
     </div>
@@ -866,7 +926,7 @@
             
             <div class="footer-buttons">
                 <button onclick="window.open('https://unwillingness.github.io/zhx.github.io/', '_blank')"><i class="fas fa-link"></i> zhx</button>
-                <button onclick="window.open('https://xzc7777777.github.io/7/', '_blank')"><i class="fas fa-link"></i> xzc</button>
+                <button onclick="window.open('https://cheer-7.github.io/xzc/', '_blank')"><i class="fas fa-link"></i> xzc</button>
                 <button onclick="window.open('https://siesta1305539782-png.github.io/nina-Repository/', '_blank')"><i class="fas fa-link"></i> ljq</button>
             </div>
             
@@ -881,6 +941,13 @@
     </div>
     
     <script>
+        // 页面加载动画
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.querySelector('.loader').classList.add('hidden');
+            }, 1000);
+        });
+        
         // 回到顶部按钮功能
         const backToTopButton = document.getElementById('backToTop');
         
