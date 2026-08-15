@@ -566,6 +566,46 @@
             font-size: 1.05rem;
             margin: 0;
         }
+        .comments-section {
+            margin-top: 70px;
+            padding: 40px;
+            background: var(--card-background);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .comments-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient-accent);
+            border-radius: 4px 0 0 4px;
+        }
+        .comments-section:hover {
+            box-shadow: var(--shadow-hover);
+        }
+        .comments-intro {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 16px;
+            border-left: 4px solid var(--accent-color);
+        }
+        body.dark-mode .comments-intro {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        .utterances-frame {
+            width: 100%;
+        }
         .footer {
             text-align: center;
             margin-top: 50px;
@@ -941,6 +981,7 @@
                 <a href="#portfolio" class="navbar-link">个人作品集</a>
                 <a href="#certifications" class="navbar-link">证书奖项</a>
                 <a href="#contact" class="navbar-link">联系我</a>
+                <a href="#comments" class="navbar-link">留言板</a>
             </div>
         </div>
     </nav>
@@ -1107,9 +1148,26 @@
                     </div>
                 </div>
             </div>
-            
+
+            <div class="section comments-section" id="comments">
+                <h2><i class="fas fa-comments"></i> 留言板</h2>
+                <div class="comments-intro">
+                    💬 欢迎留下你的想法、建议或交流技术问题！留言由 GitHub Issues 安全托管，
+                    所有访客都可以查看和留言，刷新页面或换一台电脑访问，留言内容依然保留。
+                    发言请使用 GitHub 账号登录后进行评论。
+                </div>
+                <div id="utterances-container">
+                    <script src="https://utteranc.es/client.js"
+                        repo="yuk405/Yuk"
+                        issue-term="pathname"
+                        label="💬 留言"
+                        theme="github-light"
+                        async>
+                    </script>
+                </div>
+            </div>
+
             <div class="footer-buttons">
-                <button onclick="window.open('https://unwillingness.github.io/zhx.github.io/', '_blank')"><i class="fas fa-link"></i> zhx</button>
                 <button onclick="window.open('https://cheer-7.github.io/xzc/', '_blank')"><i class="fas fa-link"></i> xzc</button>
                 <button onclick="window.open('https://siesta1305539782-png.github.io/nina-Repository/', '_blank')"><i class="fas fa-link"></i> ljq</button>
             </div>
@@ -1153,17 +1211,38 @@
         // 暗黑模式切换
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = themeToggle.querySelector('i');
-        
+
         // 检查本地存储中的主题偏好
         if (localStorage.getItem('darkMode') === 'true') {
             document.body.classList.add('dark-mode');
             themeIcon.classList.remove('fa-moon');
             themeIcon.classList.add('fa-sun');
         }
-        
+
+        // ====== 留言板（utterances）主题切换 ======
+        // 仓库配置已写在 HTML 静态 <script> 标签中
+
+        function getUtterancesTheme() {
+            return document.body.classList.contains('dark-mode') ? 'github-dark' : 'github-light';
+        }
+
+        function updateUtterancesTheme() {
+            const iframe = document.querySelector('iframe.utterances-frame');
+            if (!iframe) return;
+            iframe.contentWindow.postMessage({
+                type: 'set-theme',
+                theme: getUtterancesTheme()
+            }, 'https://utteranc.es');
+        }
+
+        // 监听页面加载完成
+        window.addEventListener('load', () => {
+            setTimeout(updateUtterancesTheme, 500);
+        });
+
         themeToggle.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
-            
+
             if (document.body.classList.contains('dark-mode')) {
                 themeIcon.classList.remove('fa-moon');
                 themeIcon.classList.add('fa-sun');
@@ -1173,6 +1252,8 @@
                 themeIcon.classList.add('fa-moon');
                 localStorage.setItem('darkMode', 'false');
             }
+            // 同步切换留言板主题
+            setTimeout(updateUtterancesTheme, 300);
         });
     </script>
 </body>
