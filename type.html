@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>键盘忍者 · 打字大冒险</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+        --bg-1: #0f0c29;
+        --bg-2: #302b63;
+        --bg-3: #24243e;
+        --neon-cyan: #00f5ff;
+        --neon-pink: #ff2d95;
+        --neon-yellow: #ffe600;
+        --neon-green: #39ff14;
+        --neon-purple: #b026ff;
+        --danger: #ff3860;
+    }
+    html, body {
+        height: 100%;
+        font-family: 'Courier New', 'Menlo', monospace;
+        color: #fff;
+        overflow: hidden;
+        user-select: none;
+    }
+    body {
+        background: linear-gradient(-45deg, var(--bg-1), var(--bg-2), var(--bg-3), var(--bg-1));
+        background-size: 400% 400%;
+        animation: bgShift 18s ease infinite;
+    }
+    @keyframes bgShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* ===== 星空背景 ===== */
+    #stars {
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    }
+
+    /* ===== 游戏容器 ===== */
+    #app {
+        position: relative;
+        width: 100vw; height: 100vh;
+        z-index: 1;
+    }
+
+    /* ===== HUD ===== */
+    .hud {
+        position: absolute; top: 0; left: 0; right: 0;
+        display: flex; justify-content: space-between;
+        padding: 20px 30px;
+        z-index: 10;
+        background: linear-gradient(180deg, rgba(0,0,0,0.5), transparent);
+    }
+    .hud-item {
+        display: flex; flex-direction: column;
+        align-items: center; gap: 4px;
+        min-width: 90px;
+    }
+    .hud-label {
+        font-size: 0.75rem;
+        color: #aaa;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+    .hud-value {
+        font-size: 1.8rem;
+        font-weight: 900;
+        text-shadow: 0 0 10px currentColor;
+    }
+    .hud-value.score { color: var(--neon-cyan); }
+    .hud-value.combo { color: var(--neon-yellow); }
+    .hud-value.level { color: var(--neon-green); }
+    .hud-value.lives { color: var(--neon-pink); }
+
+    .hearts {
+        display: flex; gap: 4px;
+        font-size: 1.4rem;
+    }
+    .heart-lost { filter: grayscale(1); opacity: 0.25; }
+
+    /* ===== 游戏区 ===== */
+    #playArea {
+        position: absolute; inset: 0;
+        overflow: hidden;
+    }
+    .word {
+        position: absolute;
+        font-size: 1.6rem;
+        font-weight: 700;
+        padding: 8px 14px;
+        border-radius: 10px;
+        background: rgba(0,0,0,0.45);
+        border: 2px solid var(--neon-cyan);
+        color: #fff;
+        text-shadow: 0 0 8px var(--neon-cyan);
+        box-shadow: 0 0 15px rgba(0, 245, 255, 0.5), inset 0 0 10px rgba(0,245,255,0.2);
+        white-space: nowrap;
+        transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+        backdrop-filter: blur(4px);
+    }
+    .word.locked {
+        border-color: var(--neon-yellow);
+        color: var(--neon-yellow);
+        text-shadow: 0 0 12px var(--neon-yellow);
+        box-shadow: 0 0 25px var(--neon-yellow), inset 0 0 15px rgba(255,230,0,0.3);
+        transform: scale(1.08);
+    }
+    .word.special-gold {
+        border-color: var(--neon-yellow);
+        color: var(--neon-yellow);
+        text-shadow: 0 0 8px var(--neon-yellow);
+        box-shadow: 0 0 20px rgba(255,230,0,0.6);
+    }
+    .word.special-purple {
+        border-color: var(--neon-purple);
+        color: var(--neon-purple);
+        text-shadow: 0 0 8px var(--neon-purple);
+        box-shadow: 0 0 20px rgba(176,38,255,0.6);
+    }
+    .word .char {
+        display: inline-block;
+    }
+    .word .char.matched {
+        color: var(--neon-green);
+        text-shadow: 0 0 12px var(--neon-green);
+        transform: translateY(-3px);
+    }
+    .word .char.cursor {
+        background: var(--neon-yellow);
+        color: #000;
+        border-radius: 3px;
+        text-shadow: none;
+        animation: blink 0.6s infinite;
+    }
+    @keyframes blink { 50% { opacity: 0.4; } }
+
+    .word.hit {
+        animation: explode 0.4s ease-out forwards;
+    }
+    @keyframes explode {
+        0% { transform: scale(1.4); opacity: 1; }
+        100% { transform: scale(2.5); opacity: 0; }
+    }
+
+    /* ===== 粒子 ===== */
+    .particle {
+        position: absolute;
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        pointer-events: none;
+        will-change: transform, opacity;
+    }
+
+    /* ===== 游戏控制按钮组 ===== */
+    .game-controls {
+        position: absolute;
+        top: 90px; right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 10;
+    }
+    .game-controls.hidden { display: none; }
+    .ctrl-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        background: rgba(0,0,0,0.6);
+        border: 1px solid var(--neon-cyan);
+        color: var(--neon-cyan);
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 0 10px rgba(0,245,255,0.3);
+        transition: all 0.2s;
+        min-width: 88px;
+    }
+    .ctrl-btn:hover {
+        background: var(--neon-cyan);
+        color: #000;
+        box-shadow: 0 0 18px var(--neon-cyan);
+        transform: translateX(-3px);
+    }
+    .ctrl-btn .ctrl-icon {
+        font-size: 1rem;
+        line-height: 1;
+    }
+    .ctrl-btn.warn {
+        border-color: var(--neon-pink);
+        color: var(--neon-pink);
+        box-shadow: 0 0 10px rgba(255,45,149,0.3);
+    }
+    .ctrl-btn.warn:hover {
+        background: var(--neon-pink);
+        color: #fff;
+        box-shadow: 0 0 18px var(--neon-pink);
+    }
+
+    /* ===== 输入提示 ===== */
+    .input-hint {
+        position: absolute;
+        bottom: 30px; left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 24px;
+        background: rgba(0,0,0,0.6);
+        border: 2px solid var(--neon-cyan);
+        border-radius: 12px;
+        font-size: 1.2rem;
+        color: #aaa;
+        letter-spacing: 1px;
+        box-shadow: 0 0 20px rgba(0,245,255,0.3);
+        z-index: 5;
+    }
+    .input-hint .typed {
+        color: var(--neon-green);
+        text-shadow: 0 0 8px var(--neon-green);
+        font-weight: 700;
+    }
+
+    /* ===== 遮罩页面 ===== */
+    .overlay {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.75);
+        backdrop-filter: blur(8px);
+        z-index: 100;
+        text-align: center;
+        padding: 20px;
+    }
+    .overlay.hidden { display: none; }
+    .title {
+        font-size: 4rem;
+        font-weight: 900;
+        letter-spacing: 4px;
+        background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink), var(--neon-yellow));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 30px rgba(0,245,255,0.5);
+        margin-bottom: 8px;
+        animation: titleGlow 2s ease-in-out infinite alternate;
+    }
+    @keyframes titleGlow {
+        from { filter: drop-shadow(0 0 5px var(--neon-cyan)); }
+        to { filter: drop-shadow(0 0 25px var(--neon-pink)); }
+    }
+    .subtitle {
+        font-size: 1.1rem;
+        color: #aaa;
+        margin-bottom: 30px;
+        letter-spacing: 2px;
+    }
+    .btn {
+        padding: 14px 40px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        font-family: inherit;
+        background: transparent;
+        color: var(--neon-cyan);
+        border: 2px solid var(--neon-cyan);
+        border-radius: 8px;
+        cursor: pointer;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+        margin: 6px;
+        box-shadow: 0 0 15px rgba(0,245,255,0.4);
+    }
+    .btn:hover {
+        background: var(--neon-cyan);
+        color: #000;
+        box-shadow: 0 0 25px var(--neon-cyan);
+        transform: translateY(-2px);
+    }
+    .btn.pink {
+        color: var(--neon-pink);
+        border-color: var(--neon-pink);
+        box-shadow: 0 0 15px rgba(255,45,149,0.4);
+    }
+    .btn.pink:hover {
+        background: var(--neon-pink); color: #fff;
+        box-shadow: 0 0 25px var(--neon-pink);
+    }
+
+    .instructions {
+        max-width: 600px;
+        margin: 0 auto 30px;
+        text-align: left;
+        line-height: 1.8;
+        color: #ccc;
+        font-size: 0.95rem;
+        background: rgba(255,255,255,0.05);
+        padding: 20px 25px;
+        border-radius: 10px;
+        border-left: 3px solid var(--neon-cyan);
+    }
+    .instructions h3 {
+        color: var(--neon-yellow);
+        margin-bottom: 10px;
+        letter-spacing: 1px;
+    }
+    .instructions .tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin: 0 4px;
+    }
+    .tag-cyan { background: var(--neon-cyan); color: #000; }
+    .tag-gold { background: var(--neon-yellow); color: #000; }
+    .tag-purple { background: var(--neon-purple); color: #fff; }
+
+    .theme-selector {
+        display: flex; gap: 10px; flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 30px;
+        max-width: 600px;
+    }
+    .theme-btn {
+        padding: 10px 20px;
+        background: rgba(255,255,255,0.05);
+        color: #ddd;
+        border: 1px solid #444;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    .theme-btn:hover {
+        border-color: var(--neon-cyan);
+        color: var(--neon-cyan);
+    }
+    .theme-btn.active {
+        background: var(--neon-cyan);
+        color: #000;
+        border-color: var(--neon-cyan);
+        font-weight: 700;
+    }
+
+    .final-score {
+        font-size: 3rem;
+        color: var(--neon-yellow);
+        font-weight: 900;
+        text-shadow: 0 0 20px var(--neon-yellow);
+        margin: 10px 0;
+    }
+    .high-score {
+        color: #aaa;
+        margin-bottom: 20px;
+    }
+    .high-score span {
+        color: var(--neon-green);
+        font-weight: 700;
+    }
+
+    /* 连击震动 */
+    .shake { animation: shake 0.3s; }
+    @keyframes shake {
+        0%, 100% { transform: translate(0, 0); }
+        25% { transform: translate(-5px, 3px); }
+        50% { transform: translate(4px, -2px); }
+        75% { transform: translate(-3px, 4px); }
+    }
+
+    /* Toast 提示 */
+    .toast {
+        position: absolute;
+        top: 80px; left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 24px;
+        background: rgba(0,0,0,0.8);
+        border: 2px solid var(--neon-green);
+        color: var(--neon-green);
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 1rem;
+        z-index: 20;
+        animation: toastIn 1.6s ease forwards;
+        pointer-events: none;
+    }
+    .toast.warn { border-color: var(--danger); color: var(--danger); }
+    .toast.gold { border-color: var(--neon-yellow); color: var(--neon-yellow); }
+    @keyframes toastIn {
+        0% { opacity: 0; transform: translate(-50%, -20px); }
+        15% { opacity: 1; transform: translate(-50%, 0); }
+        85% { opacity: 1; transform: translate(-50%, 0); }
+        100% { opacity: 0; transform: translate(-50%, -10px); }
+    }
+
+    @media (max-width: 600px) {
+        .title { font-size: 2.5rem; }
+        .hud { padding: 10px 15px; }
+        .hud-item { min-width: 60px; }
+        .hud-value { font-size: 1.3rem; }
+        .word { font-size: 1.2rem; padding: 6px 10px; }
+        .input-hint { font-size: 0.9rem; padding: 8px 16px; bottom: 20px; }
+        .game-controls {
+            top: 70px; right: 10px;
+        }
+        .ctrl-btn {
+            min-width: 70px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+        }
+        .ctrl-btn .ctrl-text { display: none; }
+        .ctrl-btn .ctrl-icon { font-size: 1.2rem; }
+    }
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div id="app">
+    <!-- HUD -->
+    <div class="hud">
+        <div class="hud-item">
+            <div class="hud-label">Score</div>
+            <div class="hud-value score" id="scoreVal">0</div>
+        </div>
+        <div class="hud-item">
+            <div class="hud-label">Combo</div>
+            <div class="hud-value combo" id="comboVal">x0</div>
+        </div>
+        <div class="hud-item">
+            <div class="hud-label">Level</div>
+            <div class="hud-value level" id="levelVal">1</div>
+        </div>
+        <div class="hud-item">
+            <div class="hud-label">Lives</div>
+            <div class="hud-value lives">
+                <div class="hearts" id="hearts"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏区 -->
+    <div id="playArea"></div>
+
+    <!-- 游戏控制按钮组 -->
+    <div class="game-controls" id="gameControls">
+        <button class="ctrl-btn" id="pauseBtn" title="暂停/继续">
+            <span class="ctrl-icon">⏸</span>
+            <span class="ctrl-text">暂停</span>
+        </button>
+        <button class="ctrl-btn" id="restartGameBtn" title="重新开始">
+            <span class="ctrl-icon">↻</span>
+            <span class="ctrl-text">重玩</span>
+        </button>
+        <button class="ctrl-btn warn" id="quitBtn" title="退出">
+            <span class="ctrl-icon">⏏</span>
+            <span class="ctrl-text">退出</span>
+        </button>
+    </div>
+
+    <!-- 暂停遮罩 -->
+    <div class="overlay hidden" id="pauseOverlay">
+        <div class="title" style="font-size: 3rem;">已暂停</div>
+        <div class="subtitle">PAUSED</div>
+        <button class="btn" id="resumeBtn">继续游戏</button>
+        <button class="btn pink" id="restartFromPauseBtn">重新开始</button>
+        <button class="btn" id="quitFromPauseBtn">返回主菜单</button>
+    </div>
+
+    <!-- 输入提示 -->
+    <div class="input-hint" id="inputHint">
+        <span style="opacity:0.5;">敲键盘消除单词</span>
+    </div>
+
+    <!-- 开始遮罩 -->
+    <div class="overlay" id="startOverlay">
+        <div class="title">键盘忍者</div>
+        <div class="subtitle">· TYPING NINJA ·</div>
+        <div class="instructions">
+            <h3>玩法说明</h3>
+            · 单词从顶部下落，敲键盘按顺序输入字母即可消除<br>
+            · 同时只能锁定一个单词，输入第一个字母时自动锁定<br>
+            · 单词落到底部则失去 1 颗心，3 颗心用完游戏结束<br>
+            · 连击越高分数越高，每 100 分升一级，速度加快<br>
+            <span class="tag tag-gold">金色单词</span>：消除得分翻倍
+            <span class="tag tag-purple">紫色单词</span>：消除后减速 3 秒
+        </div>
+        <div style="margin-bottom: 20px; color:#aaa;">选择主题词库：</div>
+        <div class="theme-selector" id="themeSelector">
+            <button class="theme-btn active" data-theme="mixed">混合挑战</button>
+            <button class="theme-btn" data-theme="code">编程术语</button>
+            <button class="theme-btn" data-theme="animal">动物世界</button>
+            <button class="theme-btn" data-theme="fruit">水果大全</button>
+            <button class="theme-btn" data-theme="english">英语高频词</button>
+        </div>
+        <button class="btn" id="startBtn">开始游戏</button>
+    </div>
+
+    <!-- 结束遮罩 -->
+    <div class="overlay hidden" id="endOverlay">
+        <div class="title" style="font-size: 3rem;">游戏结束</div>
+        <div class="subtitle">GAME OVER</div>
+        <div style="color:#aaa;">最终得分</div>
+        <div class="final-score" id="finalScore">0</div>
+        <div class="high-score">最高分: <span id="highScore">0</span></div>
+        <button class="btn pink" id="restartBtn">再来一局</button>
+        <button class="btn" id="homeBtn">返回主菜单</button>
+    </div>
+</div>
+
+<script>
+/* ============== 词库 ============== */
+const WORD_BANKS = {
+    code: ['function','variable','const','array','object','class','return','import','export','async','await','promise','string','number','boolean','closure','scope','react','vue','angular','node','python','java','script','debug','compile','runtime','memory','pointer','lambda','iterate','parse','socket','server','client','query','buffer','stream','render','hook','effect'],
+    animal: ['cat','dog','elephant','tiger','panda','dolphin','rabbit','monkey','giraffe','penguin','kangaroo','cheetah','squirrel','hedgehog','octopus','butterfly','crocodile','flamingo','rhinoceros','chameleon','wolf','fox','deer','bear','eagle','parrot','turtle','frog','snake','lion'],
+    fruit: ['apple','banana','orange','grape','mango','peach','cherry','lemon','melon','kiwi','papaya','coconut','durian','apricot','avocado','blueberry','raspberry','strawberry','watermelon','pineapple','pomegranate','blackberry','nectarine','plum','pear','lime','fig','date'],
+    english: ['the','and','you','that','was','for','are','with','his','they','this','have','from','which','been','will','their','said','each','make','word','when','about','there','were','what','your','can','like','long','look','come','made','many','then','them','these','would','more','write','number','people','into','could','than','other','side','first','water'],
+    mixed: []
+};
+WORD_BANKS.mixed = [
+    ...WORD_BANKS.code, ...WORD_BANKS.animal, ...WORD_BANKS.fruit, ...WORD_BANKS.english
+];
+
+/* ============== 星空背景 ============== */
+const starsCanvas = document.getElementById('stars');
+const sctx = starsCanvas.getContext('2d');
+let stars = [];
+function initStars() {
+    starsCanvas.width = window.innerWidth;
+    starsCanvas.height = window.innerHeight;
+    stars = [];
+    const count = Math.floor((window.innerWidth * window.innerHeight) / 9000);
+    for (let i = 0; i < count; i++) {
+        stars.push({
+            x: Math.random() * starsCanvas.width,
+            y: Math.random() * starsCanvas.height,
+            r: Math.random() * 1.5 + 0.3,
+            tw: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.15 + 0.05
+        });
+    }
+}
+function drawStars() {
+    sctx.clearRect(0, 0, starsCanvas.width, starsCanvas.height);
+    for (const s of stars) {
+        s.y += s.speed;
+        if (s.y > starsCanvas.height) s.y = 0;
+        s.tw += 0.03;
+        const alpha = 0.4 + 0.6 * Math.abs(Math.sin(s.tw));
+        sctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        sctx.beginPath();
+        sctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        sctx.fill();
+    }
+    requestAnimationFrame(drawStars);
+}
+window.addEventListener('resize', initStars);
+initStars();
+drawStars();
+
+/* ============== 游戏状态 ============== */
+const state = {
+    running: false,
+    paused: false,
+    score: 0,
+    combo: 0,
+    level: 1,
+    lives: 3,
+    words: [],
+    lockedWord: null,
+    typed: '',
+    spawnTimer: 0,
+    spawnInterval: 2200,
+    fallSpeed: 60,  // px/sec
+    slowUntil: 0,
+    theme: 'mixed',
+    high: parseInt(localStorage.getItem('typingNinjaHigh') || '0', 10)
+};
+
+/* ============== DOM 引用 ============== */
+const playArea = document.getElementById('playArea');
+const scoreVal = document.getElementById('scoreVal');
+const comboVal = document.getElementById('comboVal');
+const levelVal = document.getElementById('levelVal');
+const heartsEl = document.getElementById('hearts');
+const inputHint = document.getElementById('inputHint');
+const startOverlay = document.getElementById('startOverlay');
+const endOverlay = document.getElementById('endOverlay');
+const finalScoreEl = document.getElementById('finalScore');
+const highScoreEl = document.getElementById('highScore');
+const gameControls = document.getElementById('gameControls');
+const pauseOverlay = document.getElementById('pauseOverlay');
+const pauseBtn = document.getElementById('pauseBtn');
+
+/* ============== 工具函数 ============== */
+function rand(min, max) { return Math.random() * (max - min) + min; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function pad(n) { return n < 10 ? '0' + n : n; }
+
+function renderHearts() {
+    heartsEl.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+        const heart = document.createElement('span');
+        heart.textContent = '♥';
+        if (i >= state.lives) heart.classList.add('heart-lost');
+        heartsEl.appendChild(heart);
+    }
+}
+
+function updateHUD() {
+    scoreVal.textContent = state.score;
+    comboVal.textContent = 'x' + state.combo;
+    levelVal.textContent = state.level;
+    renderHearts();
+}
+
+function showToast(text, type = '') {
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = text;
+    playArea.appendChild(t);
+    setTimeout(() => t.remove(), 1700);
+}
+
+/* ============== 单词生成 ============== */
+function spawnWord() {
+    const bank = WORD_BANKS[state.theme];
+    let text = pick(bank);
+    // 避免与现有单词首字母冲突（影响锁定逻辑）
+    const existingFirsts = state.words.map(w => w.text[0].toLowerCase());
+    let tries = 0;
+    while (existingFirsts.includes(text[0].toLowerCase()) && tries < 10) {
+        text = pick(bank);
+        tries++;
+    }
+
+    const el = document.createElement('div');
+    el.className = 'word';
+
+    // 随机特殊类型
+    const r = Math.random();
+    if (r < 0.08) el.classList.add('special-gold');
+    else if (r < 0.14) el.classList.add('special-purple');
+
+    // 宽度估算
+    el.textContent = text;
+    playArea.appendChild(el);
+    const width = el.offsetWidth;
+
+    const x = rand(20, window.innerWidth - width - 20);
+    el.style.left = x + 'px';
+    el.style.top = '-60px';
+
+    // 重新构建带 span 的内容
+    el.innerHTML = '';
+    for (const ch of text) {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = ch;
+        el.appendChild(span);
+    }
+
+    const wordObj = {
+        text: text,
+        el: el,
+        x: x,
+        y: -60,
+        speed: state.fallSpeed * rand(0.85, 1.15),
+        isGold: el.classList.contains('special-gold'),
+        isPurple: el.classList.contains('special-purple'),
+        matchedCount: 0
+    };
+    state.words.push(wordObj);
+}
+
+/* ============== 粒子爆炸 ============== */
+function explode(x, y, color) {
+    const count = 18;
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.background = color;
+        p.style.boxShadow = `0 0 8px ${color}`;
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        playArea.appendChild(p);
+        const angle = (Math.PI * 2 / count) * i + rand(-0.2, 0.2);
+        const dist = rand(40, 110);
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist;
+        p.animate([
+            { transform: 'translate(0,0) scale(1)', opacity: 1 },
+            { transform: `translate(${dx}px, ${dy}px) scale(0)`, opacity: 0 }
+        ], { duration: 600, easing: 'cubic-bezier(0.2,0.8,0.3,1)' });
+        setTimeout(() => p.remove(), 650);
+    }
+}
+
+/* ============== 输入处理 ============== */
+function handleKey(ch) {
+    if (!state.running || state.paused) return;
+    ch = ch.toLowerCase();
+
+    // 锁定一个单词
+    if (!state.lockedWord) {
+        const candidates = state.words.filter(w =>
+            w.text[0].toLowerCase() === ch && w.matchedCount === 0
+        );
+        if (candidates.length === 0) {
+            // 打空了，连击中断
+            if (state.combo > 0) {
+                state.combo = 0;
+                updateHUD();
+            }
+            return;
+        }
+        // 选最低的单词（最紧急）
+        candidates.sort((a, b) => b.y - a.y);
+        state.lockedWord = candidates[0];
+        state.lockedWord.el.classList.add('locked');
+    }
+
+    const w = state.lockedWord;
+    const nextChar = w.text[w.matchedCount].toLowerCase();
+    if (ch === nextChar) {
+        // 标记匹配
+        const spans = w.el.querySelectorAll('.char');
+        spans[w.matchedCount].classList.add('matched');
+        spans[w.matchedCount].classList.remove('cursor');
+        w.matchedCount++;
+
+        if (w.matchedCount < w.text.length) {
+            spans[w.matchedCount].classList.add('cursor');
+        }
+        updateInputHint();
+    } else {
+        // 打错了，重置该单词
+        if (state.combo > 0) {
+            state.combo = 0;
+            updateHUD();
+            showToast('打错了！连击中断', 'warn');
+        }
+        resetWordInput(w);
+        updateInputHint();
+    }
+
+    // 检查完成
+    if (w.matchedCount >= w.text.length) {
+        completeWord(w);
+    }
+}
+
+function resetWordInput(w) {
+    w.matchedCount = 0;
+    const spans = w.el.querySelectorAll('.char');
+    spans.forEach(s => {
+        s.classList.remove('matched');
+        s.classList.remove('cursor');
+    });
+}
+
+function completeWord(w) {
+    // 计分
+    const base = w.text.length * 10;
+    const comboBonus = Math.floor(base * state.combo * 0.1);
+    const goldMultiplier = w.isGold ? 2 : 1;
+    const gain = (base + comboBonus) * goldMultiplier;
+    state.score += gain;
+    state.combo++;
+
+    // 升级
+    const newLevel = Math.floor(state.score / 100) + 1;
+    if (newLevel > state.level) {
+        state.level = newLevel;
+        state.fallSpeed = 60 + (state.level - 1) * 15;
+        state.spawnInterval = Math.max(700, 2200 - (state.level - 1) * 150);
+        showToast(`Level Up! 第 ${state.level} 关`, 'gold');
+    }
+
+    if (w.isGold) showToast(`+${gain} 金色加成！`, 'gold');
+    if (w.isPurple) {
+        state.slowUntil = performance.now() + 3000;
+        showToast('紫色魔法：减速 3 秒', 'gold');
+    }
+    if (state.combo >= 5 && state.combo % 5 === 0) {
+        showToast(`连击 x${state.combo}！`, 'gold');
+        playArea.classList.add('shake');
+        setTimeout(() => playArea.classList.remove('shake'), 300);
+    }
+
+    // 爆炸效果
+    const rect = w.el.getBoundingClientRect();
+    const playRect = playArea.getBoundingClientRect();
+    const cx = rect.left - playRect.left + rect.width / 2;
+    const cy = rect.top - playRect.top + rect.height / 2;
+    const color = w.isGold ? '#ffe600'
+                : w.isPurple ? '#b026ff'
+                : '#39ff14';
+    explode(cx, cy, color);
+
+    // 移除
+    w.el.classList.add('hit');
+    setTimeout(() => w.el.remove(), 400);
+    state.words = state.words.filter(x => x !== w);
+    state.lockedWord = null;
+    updateInputHint();
+    updateHUD();
+}
+
+function updateInputHint() {
+    if (state.lockedWord) {
+        const matched = state.lockedWord.text.slice(0, state.lockedWord.matchedCount);
+        const rest = state.lockedWord.text.slice(state.lockedWord.matchedCount);
+        inputHint.innerHTML = `<span class="typed">${matched}</span>${rest}`;
+    } else {
+        inputHint.innerHTML = `<span style="opacity:0.5;">敲键盘消除单词</span>`;
+    }
+}
+
+/* ============== 失误处理 ============== */
+function loseLife() {
+    state.lives--;
+    state.combo = 0;
+    updateHUD();
+    playArea.classList.add('shake');
+    setTimeout(() => playArea.classList.remove('shake'), 300);
+    showToast('失去 1 颗心！', 'warn');
+    if (state.lives <= 0) endGame();
+}
+
+/* ============== 主循环 ============== */
+let lastTime = 0;
+function loop(now) {
+    if (!state.running) return;
+    // 暂停时只继续等待，不更新逻辑
+    if (state.paused) {
+        lastTime = now;
+        requestAnimationFrame(loop);
+        return;
+    }
+    const dt = (now - lastTime) / 1000;
+    lastTime = now;
+
+    // 减速效果
+    const speedMul = now < state.slowUntil ? 0.4 : 1;
+
+    // 生成新词
+    state.spawnTimer += dt * 1000;
+    if (state.spawnTimer >= state.spawnInterval) {
+        state.spawnTimer = 0;
+        spawnWord();
+    }
+
+    // 下落
+    for (const w of state.words) {
+        w.y += w.speed * speedMul * dt;
+        w.el.style.top = w.y + 'px';
+        if (w.y > window.innerHeight - 100) {
+            // 落地
+            if (state.lockedWord === w) state.lockedWord = null;
+            w.el.remove();
+            state.words = state.words.filter(x => x !== w);
+            updateInputHint();
+            loseLife();
+        }
+    }
+
+    requestAnimationFrame(loop);
+}
+
+/* ============== 游戏控制 ============== */
+function startGame() {
+    state.running = true;
+    state.paused = false;
+    state.score = 0;
+    state.combo = 0;
+    state.level = 1;
+    state.lives = 3;
+    state.words.forEach(w => w.el.remove());
+    state.words = [];
+    state.lockedWord = null;
+    state.spawnTimer = 0;
+    state.spawnInterval = 2200;
+    state.fallSpeed = 60;
+    state.slowUntil = 0;
+    startOverlay.classList.add('hidden');
+    endOverlay.classList.add('hidden');
+    pauseOverlay.classList.add('hidden');
+    gameControls.classList.remove('hidden');
+    setPauseButton(false);
+    updateHUD();
+    updateInputHint();
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+}
+
+function setPauseButton(paused) {
+    pauseBtn.innerHTML = paused
+        ? '<span class="ctrl-icon">▶</span><span class="ctrl-text">继续</span>'
+        : '<span class="ctrl-icon">⏸</span><span class="ctrl-text">暂停</span>';
+}
+
+function togglePause() {
+    if (!state.running) return;
+    state.paused = !state.paused;
+    setPauseButton(state.paused);
+    if (state.paused) {
+        pauseOverlay.classList.remove('hidden');
+        showToast('游戏已暂停', '');
+    } else {
+        pauseOverlay.classList.add('hidden');
+        lastTime = performance.now();
+    }
+}
+
+function quitToHome() {
+    state.running = false;
+    state.paused = false;
+    state.words.forEach(w => w.el.remove());
+    state.words = [];
+    state.lockedWord = null;
+    pauseOverlay.classList.add('hidden');
+    endOverlay.classList.add('hidden');
+    gameControls.classList.add('hidden');
+    startOverlay.classList.remove('hidden');
+}
+
+function endGame() {
+    state.running = false;
+    state.paused = false;
+    if (state.score > state.high) {
+        state.high = state.score;
+        localStorage.setItem('typingNinjaHigh', state.high);
+    }
+    finalScoreEl.textContent = state.score;
+    highScoreEl.textContent = state.high;
+    endOverlay.classList.remove('hidden');
+    gameControls.classList.add('hidden');
+    state.words.forEach(w => w.el.remove());
+    state.words = [];
+    state.lockedWord = null;
+}
+
+function goHome() {
+    endOverlay.classList.add('hidden');
+    startOverlay.classList.remove('hidden');
+}
+
+/* ============== 事件绑定 ============== */
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('restartBtn').addEventListener('click', startGame);
+document.getElementById('homeBtn').addEventListener('click', goHome);
+
+// 游戏控制按钮
+pauseBtn.addEventListener('click', togglePause);
+document.getElementById('restartGameBtn').addEventListener('click', () => {
+    if (state.running) startGame();
+});
+document.getElementById('quitBtn').addEventListener('click', quitToHome);
+
+// 暂停遮罩里的按钮
+document.getElementById('resumeBtn').addEventListener('click', togglePause);
+document.getElementById('restartFromPauseBtn').addEventListener('click', startGame);
+document.getElementById('quitFromPauseBtn').addEventListener('click', quitToHome);
+
+document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.theme = btn.dataset.theme;
+    });
+});
+
+// 键盘监听
+window.addEventListener('keydown', (e) => {
+    // 忽略修饰键
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    // 空格 或 Esc：切换暂停
+    if (e.key === ' ' || e.key === 'Escape') {
+        if (state.running) {
+            e.preventDefault();
+            togglePause();
+        }
+        return;
+    }
+    if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
+        handleKey(e.key);
+    }
+});
+
+// 初始化
+updateHUD();
+gameControls.classList.add('hidden');
+</script>
+</body>
+</html>
