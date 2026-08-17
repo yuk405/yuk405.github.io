@@ -339,6 +339,31 @@
             color: var(--text-primary);
             font-weight: 600;
         }
+        .project-link {
+            cursor: pointer;
+            position: relative;
+            border: 1px solid var(--accent-color);
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+        }
+        .project-link::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+            border-radius: 24px 24px 0 0;
+        }
+        .project-link:hover {
+            transform: translateY(-10px) scale(1.01);
+            box-shadow: 0 12px 30px rgba(59, 130, 246, 0.35);
+            border-color: var(--accent-color);
+        }
+        .project-link h3 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
         .skills-list {
             display: flex;
             flex-wrap: wrap;
@@ -1054,11 +1079,12 @@
             
             <div class="section" id="projects">
                 <h2><i class="fas fa-project-diagram"></i> 项目经历</h2>
-                <div class="project-item">
-                    <h3><i class="fas fa-thumbs-up"></i> 智能推荐系统</h3>
-                    <p><strong>时间：</strong>2023年3月 - 2023年6月</p>
-                    <p><strong>描述：</strong>基于协同过滤和深度学习的推荐系统，提升用户体验和点击率。</p>
-                    <p><strong>技术：</strong>Python, TensorFlow, scikit-learn</p>
+                <div class="project-item project-link" onclick="window.open('https://yuk405.github.io/type.html', '_blank')">
+                    <h3><i class="fas fa-keyboard"></i> 打字游戏（键盘忍者）<i class="fas fa-external-link-alt" style="font-size:0.7em; color:var(--accent-color);"></i></h3>
+                    <p><strong>时间：</strong>2026年8月</p>
+                    <p><strong>描述：</strong>霓虹赛博朋克风格的打字大冒险，单词从天而降，敲键盘按顺序输入即可消除。包含连击系统、关卡进阶、金色/紫色特殊单词、粒子爆炸特效，并支持 5 种主题词库切换。</p>
+                    <p><strong>技术：</strong>HTML5 Canvas, CSS3 动画, 原生 JavaScript, Web Animations API, LocalStorage</p>
+                    <p style="margin-top:8px; color:var(--accent-color); font-size:0.9em;"><i class="fas fa-hand-pointer"></i> 点击卡片即可在线试玩 →</p>
                 </div>
                 <div class="project-item">
                     <h3><i class="fas fa-laptop-code"></i> 在线教育平台</h3>
