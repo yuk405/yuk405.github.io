@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>白噪音专注 · Focus Noise</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+        --bg-1: #0a0e1a;
+        --bg-2: #1a1f3a;
+        --bg-3: #0f0c29;
+        --neon-cyan: #00f5ff;
+        --neon-purple: #b026ff;
+        --neon-pink: #ff2d95;
+        --neon-green: #39ff14;
+        --neon-yellow: #ffe600;
+        --text-primary: #fff;
+        --text-secondary: #8892b0;
+        --card-bg: rgba(255,255,255,0.04);
+        --border: rgba(255,255,255,0.08);
+    }
+    html, body {
+        min-height: 100vh;
+        font-family: 'Courier New', 'Menlo', monospace;
+        color: var(--text-primary);
+        overflow-x: hidden;
+    }
+    body {
+        background: radial-gradient(ellipse at top, var(--bg-2), var(--bg-1) 60%, var(--bg-3));
+        background-attachment: fixed;
+        padding: 20px;
+        transition: background 0.6s ease;
+    }
+    body.focus-mode {
+        background: radial-gradient(ellipse at center, #1a1a2e, #0a0a14 70%);
+    }
+    #stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    /* 头部 */
+    .header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .title {
+        font-size: 2.8rem;
+        font-weight: 900;
+        letter-spacing: 4px;
+        background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 30px rgba(176,38,255,0.5);
+        animation: titleGlow 3s ease-in-out infinite alternate;
+    }
+    @keyframes titleGlow {
+        from { filter: drop-shadow(0 0 5px var(--neon-cyan)); }
+        to { filter: drop-shadow(0 0 25px var(--neon-pink)); }
+    }
+    .subtitle {
+        color: var(--text-secondary);
+        margin-top: 8px;
+        letter-spacing: 3px;
+        font-size: 0.85rem;
+    }
+
+    /* 顶部按钮 */
+    .top-bar {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .top-btn {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.85rem;
+        transition: all 0.3s;
+    }
+    .top-btn:hover {
+        color: var(--neon-cyan);
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 12px rgba(0,245,255,0.3);
+    }
+
+    /* 主布局 */
+    .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 800px) {
+        .main-grid { grid-template-columns: 1fr; }
+        .title { font-size: 2rem; }
+    }
+
+    .panel {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        backdrop-filter: blur(10px);
+    }
+    .panel-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: var(--neon-cyan);
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* 噪音按钮网格 */
+    .noise-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+    @media (max-width: 500px) {
+        .noise-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .noise-btn {
+        background: rgba(0,0,0,0.3);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 8px;
+        cursor: pointer;
+        font-family: inherit;
+        color: var(--text-secondary);
+        transition: all 0.3s;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .noise-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, currentColor, transparent 70%);
+        opacity: 0;
+        transition: opacity 0.4s;
+        pointer-events: none;
+    }
+    .noise-btn:hover::before { opacity: 0.1; }
+    .noise-btn:hover {
+        color: var(--text-primary);
+        border-color: var(--neon-cyan);
+        transform: translateY(-2px);
+    }
+    .noise-btn.active {
+        color: var(--neon-cyan);
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 20px rgba(0,245,255,0.4), inset 0 0 15px rgba(0,245,255,0.1);
+    }
+    .noise-btn.active.pink { color: var(--neon-pink); border-color: var(--neon-pink); box-shadow: 0 0 20px rgba(255,45,149,0.4), inset 0 0 15px rgba(255,45,149,0.1); }
+    .noise-btn.active.brown { color: #c97b30; border-color: #c97b30; box-shadow: 0 0 20px rgba(201,123,48,0.4), inset 0 0 15px rgba(201,123,48,0.1); }
+    .noise-btn.active.blue { color: #4d8eff; border-color: #4d8eff; box-shadow: 0 0 20px rgba(77,142,255,0.4); }
+    .noise-btn.active.green { color: var(--neon-green); border-color: var(--neon-green); box-shadow: 0 0 20px rgba(57,255,20,0.4); }
+    .noise-btn.active.purple { color: var(--neon-purple); border-color: var(--neon-purple); box-shadow: 0 0 20px rgba(176,38,255,0.4); }
+    .noise-btn.active.yellow { color: var(--neon-yellow); border-color: var(--neon-yellow); box-shadow: 0 0 20px rgba(255,230,0,0.4); }
+
+    .noise-icon {
+        font-size: 1.8rem;
+        margin-bottom: 4px;
+        display: block;
+    }
+    .noise-name {
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+    .noise-desc {
+        font-size: 0.65rem;
+        opacity: 0.6;
+        margin-top: 2px;
+    }
+
+    /* 音量控制 */
+    .volume-section {
+        margin-top: 16px;
+    }
+    .master-volume {
+        background: rgba(0,0,0,0.3);
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .volume-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+    .volume-value {
+        color: var(--neon-cyan);
+        font-weight: 700;
+        min-width: 36px;
+        text-align: right;
+    }
+    input[type="range"] {
+        flex: 1;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 6px;
+        outline: none;
+        cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        background: var(--neon-cyan);
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 0 10px var(--neon-cyan);
+    }
+    input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        background: var(--neon-cyan);
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    /* 番茄钟 */
+    .pomodoro {
+        text-align: center;
+    }
+    .timer-display {
+        font-size: 5rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 30px rgba(0,245,255,0.3);
+        margin: 12px 0;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 4px;
+    }
+    .timer-label {
+        color: var(--text-secondary);
+        letter-spacing: 3px;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .timer-mode {
+        color: var(--neon-yellow);
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: 2px;
+    }
+    .timer-controls {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+    .timer-btn {
+        background: transparent;
+        color: var(--neon-cyan);
+        border: 2px solid var(--neon-cyan);
+        padding: 10px 20px;
+        border-radius: 24px;
+        cursor: pointer;
+        font-family: inherit;
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+    }
+    .timer-btn:hover {
+        background: var(--neon-cyan);
+        color: #000;
+        box-shadow: 0 0 16px var(--neon-cyan);
+    }
+    .timer-btn.danger {
+        color: var(--neon-pink);
+        border-color: var(--neon-pink);
+    }
+    .timer-btn.danger:hover {
+        background: var(--neon-pink);
+        color: #fff;
+        box-shadow: 0 0 16px var(--neon-pink);
+    }
+    .timer-stats {
+        margin-top: 16px;
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+    }
+    .timer-stats span {
+        color: var(--neon-green);
+        font-weight: 700;
+    }
+
+    /* 预设时长 */
+    .presets {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+    .preset-btn {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        padding: 6px 14px;
+        border-radius: 16px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.8rem;
+        transition: all 0.3s;
+    }
+    .preset-btn:hover { color: var(--neon-cyan); border-color: var(--neon-cyan); }
+    .preset-btn.active {
+        background: var(--neon-cyan);
+        color: #000;
+        border-color: var(--neon-cyan);
+        font-weight: 700;
+    }
+
+    /* 可视化 */
+    .visualizer-panel {
+        margin-bottom: 20px;
+    }
+    #visualizer {
+        width: 100%;
+        height: 120px;
+        display: block;
+        border-radius: 12px;
+        background: rgba(0,0,0,0.4);
+        border: 1px solid var(--border);
+    }
+
+    /* 预设场景 */
+    .scenes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+    }
+    .scene-btn {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 8px;
+        cursor: pointer;
+        font-family: inherit;
+        color: var(--text-secondary);
+        transition: all 0.3s;
+        text-align: center;
+    }
+    .scene-btn:hover {
+        color: var(--text-primary);
+        border-color: var(--neon-purple);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(176,38,255,0.2);
+    }
+    .scene-icon { font-size: 1.6rem; display: block; }
+    .scene-name { font-size: 0.8rem; margin-top: 4px; font-weight: 700; }
+    .scene-desc { font-size: 0.65rem; opacity: 0.6; margin-top: 2px; }
+
+    /* 全屏专注模式 */
+    .focus-overlay {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(ellipse at center, #1a1a2e, #050510 80%);
+        z-index: 1000;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.6s ease;
+    }
+    .focus-overlay.visible {
+        display: flex;
+        opacity: 1;
+    }
+    .focus-timer {
+        font-size: 12rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 8px;
+        text-shadow: 0 0 60px rgba(0,245,255,0.3);
+    }
+    .focus-label {
+        color: var(--text-secondary);
+        font-size: 1.2rem;
+        letter-spacing: 4px;
+        margin-bottom: 16px;
+    }
+    .focus-hint {
+        position: absolute;
+        bottom: 40px;
+        color: var(--text-secondary);
+        opacity: 0.4;
+        font-size: 0.85rem;
+    }
+    .focus-close {
+        position: absolute;
+        top: 20px; right: 20px;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.85rem;
+        transition: all 0.3s;
+    }
+    .focus-close:hover {
+        color: var(--neon-pink);
+        border-color: var(--neon-pink);
+    }
+
+    /* Toast */
+    .toast {
+        position: fixed;
+        top: 20px; left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 22px;
+        background: rgba(0,0,0,0.9);
+        border: 2px solid var(--neon-cyan);
+        color: var(--neon-cyan);
+        border-radius: 8px;
+        font-weight: 700;
+        z-index: 2000;
+        animation: toastIn 2s ease forwards;
+        pointer-events: none;
+    }
+    .toast.gold { border-color: var(--neon-yellow); color: var(--neon-yellow); }
+    .toast.warn { border-color: var(--neon-pink); color: var(--neon-pink); }
+    @keyframes toastIn {
+        0% { opacity: 0; transform: translate(-50%, -20px); }
+        15% { opacity: 1; transform: translate(-50%, 0); }
+        85% { opacity: 1; transform: translate(-50%, 0); }
+        100% { opacity: 0; transform: translate(-50%, -10px); }
+    }
+
+    /* 当前播放标签 */
+    .now-playing {
+        margin-top: 14px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-align: center;
+        min-height: 22px;
+    }
+    .now-playing span { color: var(--neon-cyan); }
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+
+<div class="container">
+    <div class="top-bar">
+        <button class="top-btn" id="focusModeBtn">🌑 全屏专注</button>
+    </div>
+
+    <div class="header">
+        <div class="title">白噪音专注</div>
+        <div class="subtitle">· FOCUS NOISE ·</div>
+    </div>
+
+    <!-- 主区：噪音选择 + 番茄钟 -->
+    <div class="main-grid">
+        <!-- 噪音面板 -->
+        <div class="panel">
+            <div class="panel-title"><span>🎵</span> 声音选择</div>
+            <div class="noise-grid" id="noiseGrid"></div>
+            <div class="now-playing" id="nowPlaying">点击下方按钮开启声音</div>
+            <div class="volume-section">
+                <div class="master-volume">
+                    <span class="volume-label">🔊 总音量</span>
+                    <input type="range" id="masterVolume" min="0" max="100" value="50">
+                    <span class="volume-value" id="masterValue">50</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 番茄钟 -->
+        <div class="panel pomodoro">
+            <div class="panel-title"><span>⏱</span> 专注计时</div>
+            <div class="timer-mode" id="timerMode">准备就绪</div>
+            <div class="timer-display" id="timerDisplay">25:00</div>
+            <div class="timer-label">点击开始专注</div>
+            <div class="presets">
+                <button class="preset-btn active" data-min="25">🍅 25/5</button>
+                <button class="preset-btn" data-min="50">☕ 50/10</button>
+                <button class="preset-btn" data-min="90">🧠 90/20</button>
+                <button class="preset-btn" data-min="15">⚡ 15/3</button>
+            </div>
+            <div class="timer-controls">
+                <button class="timer-btn" id="timerStart">▶ 开始</button>
+                <button class="timer-btn danger" id="timerReset">↻ 重置</button>
+                <button class="timer-btn" id="timerSkip">⏭ 跳过</button>
+            </div>
+            <div class="timer-stats">
+                今日番茄：<span id="pomoCount">0</span> · 总专注：<span id="totalFocus">0</span>分
+            </div>
+        </div>
+    </div>
+
+    <!-- 可视化 -->
+    <div class="panel visualizer-panel">
+        <div class="panel-title"><span>📊</span> 声波可视化</div>
+        <canvas id="visualizer"></canvas>
+    </div>
+
+    <!-- 场景预设 -->
+    <div class="panel">
+        <div class="panel-title"><span>🎬</span> 一键场景</div>
+        <div class="scenes" id="scenes"></div>
+    </div>
+</div>
+
+<!-- 全屏专注模式 -->
+<div class="focus-overlay" id="focusOverlay">
+    <button class="focus-close" id="focusClose">✕ 退出 (Esc)</button>
+    <div class="focus-label" id="focusLabel">FOCUS TIME</div>
+    <div class="focus-timer" id="focusTimer">25:00</div>
+    <div class="focus-hint">深呼吸 · 保持专注 · 声音继续播放</div>
+</div>
+
+<script>
+/* ============== 星空背景 ============== */
+const starsCanvas = document.getElementById('stars');
+const sctx = starsCanvas.getContext('2d');
+let stars = [];
+function initStars() {
+    starsCanvas.width = window.innerWidth;
+    starsCanvas.height = window.innerHeight;
+    stars = [];
+    const count = Math.floor((window.innerWidth * window.innerHeight) / 12000);
+    for (let i = 0; i < count; i++) {
+        stars.push({
+            x: Math.random() * starsCanvas.width,
+            y: Math.random() * starsCanvas.height,
+            r: Math.random() * 1.8 + 0.3,
+            tw: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.1 + 0.03,
+            hue: Math.random() < 0.3 ? (180 + Math.random() * 60) : 0
+        });
+    }
+}
+function drawStars() {
+    sctx.clearRect(0, 0, starsCanvas.width, starsCanvas.height);
+    for (const s of stars) {
+        s.y += s.speed;
+        if (s.y > starsCanvas.height) s.y = 0;
+        s.tw += 0.025;
+        const alpha = 0.3 + 0.7 * Math.abs(Math.sin(s.tw));
+        if (s.hue > 0) {
+            sctx.fillStyle = `hsla(${s.hue}, 100%, 70%, ${alpha})`;
+        } else {
+            sctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        }
+        sctx.beginPath();
+        sctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        sctx.fill();
+    }
+    requestAnimationFrame(drawStars);
+}
+window.addEventListener('resize', initStars);
+initStars();
+drawStars();
+
+/* ============== 音频引擎 ============== */
+let audioCtx = null;
+let masterGain = null;
+let analyser = null;
+const activeNoises = {}; // name -> { source, gain, filter? }
+
+function ensureAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.5;
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    masterGain.connect(analyser);
+    analyser.connect(audioCtx.destination);
+}
+
+/* 生成噪音 buffer */
+function generateNoiseBuffer(type, duration = 2) {
+    const sampleRate = audioCtx.sampleRate;
+    const length = sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    if (type === 'white') {
+        for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+    } else if (type === 'pink') {
+        // Paul Kellet 粉噪音算法
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < length; i++) {
+            const white = Math.random() * 2 - 1;
+            b0 = 0.99886 * b0 + white * 0.0555179;
+            b1 = 0.99332 * b1 + white * 0.0750759;
+            b2 = 0.96900 * b2 + white * 0.1538520;
+            b3 = 0.86650 * b3 + white * 0.3104856;
+            b4 = 0.55000 * b4 + white * 0.5329522;
+            b5 = -0.7616 * b5 - white * 0.0168980;
+            data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+            b6 = white * 0.115926;
+        }
+    } else if (type === 'brown') {
+        let last = 0;
+        for (let i = 0; i < length; i++) {
+            const white = Math.random() * 2 - 1;
+            last = (last + 0.02 * white) / 1.02;
+            data[i] = last * 3.5;
+        }
+    } else {
+        for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+    }
+    return buffer;
+}
+
+/* 噪音定义 */
+const NOISES = [
+    { id: 'white',  name: '白噪音', desc: '全频段', icon: '⚪', class: '' },
+    { id: 'pink',   name: '粉噪音', desc: '柔和', icon: '🌸', class: 'pink' },
+    { id: 'brown',  name: '棕噪音', desc: '低沉', icon: '🟤', class: 'brown' },
+    { id: 'blue',   name: '蓝噪音', desc: '尖锐', icon: '🔵', class: 'blue' },
+    { id: 'rain',   name: '雨声',   desc: '下雨', icon: '🌧', class: 'green' },
+    { id: 'wind',   name: '风声',   desc: '微风', icon: '🍃', class: 'green' },
+    { id: 'ocean',  name: '海浪',   desc: '潮汐', icon: '🌊', class: 'blue' },
+    { id: 'fire',   name: '篝火',   desc: '柴火', icon: '🔥', class: 'yellow' },
+    { id: 'forest', name: '森林', desc: '鸟鸣', icon: '🌲', class: 'green' },
+];
+
+function startNoise(id) {
+    ensureAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (activeNoises[id]) return;
+
+    const noise = NOISES.find(n => n.id === id);
+    if (!noise) return;
+
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0;
+    gain.connect(masterGain);
+
+    // 渐入
+    gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.5);
+
+    if (['white', 'pink', 'brown'].includes(id)) {
+        // 纯噪音
+        const buffer = generateNoiseBuffer(id);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.connect(gain);
+        source.start();
+        activeNoises[id] = { source, gain };
+    } else if (id === 'rain') {
+        // 雨声 = 高通滤波 + 白噪音 + 偶尔滴答
+        const buffer = generateNoiseBuffer('white');
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 1000;
+        source.connect(filter);
+        filter.connect(gain);
+        source.start();
+        activeNoises[id] = { source, gain, filter };
+    } else if (id === 'wind') {
+        // 风声 = 低通 + 棕噪音 + LFO 调制
+        const buffer = generateNoiseBuffer('brown');
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 500;
+        filter.Q.value = 1;
+        source.connect(filter);
+        filter.connect(gain);
+        // LFO 让风声起伏
+        const lfo = audioCtx.createOscillator();
+        const lfoGain = audioCtx.createGain();
+        lfo.frequency.value = 0.15;
+        lfoGain.gain.value = 200;
+        lfo.connect(lfoGain);
+        lfoGain.connect(filter.frequency);
+        lfo.start();
+        source.start();
+        activeNoises[id] = { source, gain, filter, lfo };
+    } else if (id === 'ocean') {
+        // 海浪 = 低通棕噪音 + 慢速 LFO 模拟潮汐
+        const buffer = generateNoiseBuffer('brown');
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 800;
+        source.connect(filter);
+        filter.connect(gain);
+        const lfo = audioCtx.createOscillator();
+        const lfoGain = audioCtx.createGain();
+        lfo.frequency.value = 0.08;
+        lfoGain.gain.value = 0.35;
+        lfo.connect(lfoGain);
+        lfoGain.connect(gain.gain);
+        lfo.start();
+        source.start();
+        activeNoises[id] = { source, gain, filter, lfo };
+    } else if (id === 'fire') {
+        // 篝火 = 低通噪音 + 随机爆裂
+        const buffer = generateNoiseBuffer('brown');
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 1000;
+        source.connect(filter);
+        filter.connect(gain);
+        source.start();
+        // 定时随机爆裂声
+        const crackler = setInterval(() => {
+            if (!activeNoises[id]) return;
+            const crack = audioCtx.createOscillator();
+            const crackGain = audioCtx.createGain();
+            crack.frequency.value = 100 + Math.random() * 400;
+            crackGain.gain.value = 0;
+            crack.connect(crackGain);
+            crackGain.connect(masterGain);
+            const now = audioCtx.currentTime;
+            crackGain.gain.setValueAtTime(0, now);
+            crackGain.gain.linearRampToValueAtTime(0.15 + Math.random() * 0.1, now + 0.01);
+            crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            crack.start(now);
+            crack.stop(now + 0.06);
+        }, 200);
+        activeNoises[id] = { source, gain, filter, crackler };
+    } else if (id === 'forest') {
+        // 森林 = 粉噪音背景 + 随机鸟鸣
+        const buffer = generateNoiseBuffer('pink');
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 2000;
+        filter.Q.value = 0.5;
+        source.connect(filter);
+        filter.connect(gain);
+        source.start();
+        // 鸟鸣定时器
+        const birder = setInterval(() => {
+            if (!activeNoises[id]) return;
+            const bird = audioCtx.createOscillator();
+            const birdGain = audioCtx.createGain();
+            const baseFreq = 2000 + Math.random() * 2000;
+            bird.type = 'sine';
+            bird.frequency.value = baseFreq;
+            birdGain.gain.value = 0;
+            bird.connect(birdGain);
+            birdGain.connect(masterGain);
+            const now = audioCtx.currentTime;
+            birdGain.gain.setValueAtTime(0, now);
+            birdGain.gain.linearRampToValueAtTime(0.08, now + 0.05);
+            birdGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            // 颤音
+            bird.frequency.setValueAtTime(baseFreq, now);
+            bird.frequency.linearRampToValueAtTime(baseFreq * 1.3, now + 0.05);
+            bird.frequency.linearRampToValueAtTime(baseFreq * 0.9, now + 0.1);
+            bird.start(now);
+            bird.stop(now + 0.2);
+        }, 1500);
+        activeNoises[id] = { source, gain, filter, birder };
+    }
+}
+
+function stopNoise(id) {
+    const n = activeNoises[id];
+    if (!n) return;
+    // 渐出
+    n.gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+    setTimeout(() => {
+        try {
+            n.source.stop();
+        } catch(e) {}
+        if (n.crackler) clearInterval(n.crackler);
+        if (n.birder) clearInterval(n.birder);
+        if (n.lfo) try { n.lfo.stop(); } catch(e) {}
+        delete activeNoises[id];
+    }, 350);
+}
+
+function toggleNoise(id) {
+    if (activeNoises[id]) {
+        stopNoise(id);
+    } else {
+        startNoise(id);
+    }
+    updateNowPlaying();
+}
+
+function updateNowPlaying() {
+    const active = Object.keys(activeNoises);
+    const el = document.getElementById('nowPlaying');
+    if (active.length === 0) {
+        el.textContent = '点击下方按钮开启声音';
+    } else {
+        const names = active.map(id => {
+            const n = NOISES.find(x => x.id === id);
+            return n ? n.name : id;
+        });
+        el.innerHTML = '正在播放：<span>' + names.join(' + ') + '</span>';
+    }
+}
+
+/* ============== 渲染噪音按钮 ============== */
+const noiseGrid = document.getElementById('noiseGrid');
+NOISES.forEach(n => {
+    const btn = document.createElement('button');
+    btn.className = 'noise-btn ' + n.class;
+    btn.dataset.id = n.id;
+    btn.innerHTML = `
+        <span class="noise-icon">${n.icon}</span>
+        <div class="noise-name">${n.name}</div>
+        <div class="noise-desc">${n.desc}</div>
+    `;
+    btn.addEventListener('click', () => {
+        btn.classList.toggle('active');
+        toggleNoise(n.id);
+        showToast(btn.classList.contains('active') ? `${n.name} 已开启` : `${n.name} 已关闭`);
+    });
+    noiseGrid.appendChild(btn);
+});
+
+/* ============== 总音量 ============== */
+const masterVolume = document.getElementById('masterVolume');
+const masterValue = document.getElementById('masterValue');
+masterVolume.addEventListener('input', () => {
+    const v = parseInt(masterVolume.value);
+    masterValue.textContent = v;
+    if (masterGain) {
+        masterGain.gain.linearRampToValueAtTime(v / 100, audioCtx.currentTime + 0.1);
+    }
+});
+
+/* ============== 场景预设 ============== */
+const SCENES = [
+    { id: 'rainy',    name: '雨夜专注', desc: '雨+风', icon: '🌧', mix: ['rain', 'wind'] },
+    { id: 'ocean',    name: '海边冥想', desc: '海浪+风', icon: '🏖', mix: ['ocean', 'wind'] },
+    { id: 'campfire', name: '篝火夜话', desc: '篝火+夜风', icon: '🏕', mix: ['fire', 'wind'] },
+    { id: 'forest',   name: '森林清晨', desc: '鸟鸣+微风', icon: '🌲', mix: ['forest', 'wind'] },
+    { id: 'deepwork', name: '深度工作', desc: '棕噪音', icon: '🧠', mix: ['brown'] },
+    { id: 'sleep',    name: '助眠模式', desc: '粉噪音+雨', icon: '😴', mix: ['pink', 'rain'] },
+];
+
+const scenesEl = document.getElementById('scenes');
+SCENES.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'scene-btn';
+    btn.innerHTML = `
+        <span class="scene-icon">${s.icon}</span>
+        <div class="scene-name">${s.name}</div>
+        <div class="scene-desc">${s.desc}</div>
+    `;
+    btn.addEventListener('click', () => {
+        // 先关闭所有
+        Object.keys(activeNoises).forEach(id => stopNoise(id));
+        document.querySelectorAll('.noise-btn').forEach(b => b.classList.remove('active'));
+        // 等待渐出后开启新场景
+        setTimeout(() => {
+            s.mix.forEach(id => {
+                startNoise(id);
+                const noiseBtn = document.querySelector(`.noise-btn[data-id="${id}"]`);
+                if (noiseBtn) noiseBtn.classList.add('active');
+            });
+            updateNowPlaying();
+            showToast(`已切换到「${s.name}」场景`, 'gold');
+        }, 400);
+    });
+    scenesEl.appendChild(btn);
+});
+
+/* ============== 番茄钟 ============== */
+const STORAGE_KEY = 'focusNoise_stats';
+let stats = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"pomo":0,"focus":0}');
+
+const timerDisplay = document.getElementById('timerDisplay');
+const timerMode = document.getElementById('timerMode');
+const focusTimer = document.getElementById('focusTimer');
+const focusLabel = document.getElementById('focusLabel');
+const pomoCount = document.getElementById('pomoCount');
+const totalFocus = document.getElementById('totalFocus');
+
+let timerState = {
+    running: false,
+    mode: 'focus', // focus / break
+    remaining: 25 * 60,
+    workMin: 25,
+    breakMin: 5,
+    interval: null,
+};
+
+function updateTimerDisplay() {
+    const min = Math.floor(timerState.remaining / 60);
+    const sec = timerState.remaining % 60;
+    const text = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    timerDisplay.textContent = text;
+    focusTimer.textContent = text;
+    // 页面标题显示倒计时
+    if (timerState.running) {
+        document.title = `${text} · ${timerState.mode === 'focus' ? '专注中' : '休息中'} · 白噪音`;
+    } else {
+        document.title = '白噪音专注 · Focus Noise';
+    }
+}
+
+function updateTimerMode() {
+    if (!timerState.running) {
+        timerMode.textContent = '准备就绪';
+        focusLabel.textContent = 'READY';
+    } else if (timerState.mode === 'focus') {
+        timerMode.textContent = '🧠 专注中';
+        focusLabel.textContent = 'FOCUS TIME';
+    } else {
+        timerMode.textContent = '☕ 休息中';
+        focusLabel.textContent = 'BREAK TIME';
+    }
+}
+
+function updateStats() {
+    pomoCount.textContent = stats.pomo;
+    totalFocus.textContent = stats.focus;
+}
+
+function saveStats() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+}
+
+function startTimer() {
+    if (timerState.running) {
+        // 暂停
+        clearInterval(timerState.interval);
+        timerState.running = false;
+        document.getElementById('timerStart').textContent = '▶ 继续';
+        timerMode.textContent = '⏸ 已暂停';
+        return;
+    }
+    timerState.running = true;
+    document.getElementById('timerStart').textContent = '⏸ 暂停';
+    updateTimerMode();
+    timerState.interval = setInterval(() => {
+        timerState.remaining--;
+        if (timerState.remaining <= 0) {
+            // 切换模式
+            clearInterval(timerState.interval);
+            timerState.running = false;
+            if (timerState.mode === 'focus') {
+                // 完成一个番茄
+                stats.pomo++;
+                stats.focus += timerState.workMin;
+                saveStats();
+                updateStats();
+                showToast('番茄完成！该休息了 ☕', 'gold');
+                timerState.mode = 'break';
+                timerState.remaining = timerState.breakMin * 60;
+            } else {
+                showToast('休息结束，开始下一轮 🍅', 'gold');
+                timerState.mode = 'focus';
+                timerState.remaining = timerState.workMin * 60;
+            }
+            // 通知音（短促）
+            playBeep();
+            startTimer();
+        }
+        updateTimerDisplay();
+    }, 1000);
+}
+
+function resetTimer() {
+    clearInterval(timerState.interval);
+    timerState.running = false;
+    timerState.mode = 'focus';
+    timerState.remaining = timerState.workMin * 60;
+    document.getElementById('timerStart').textContent = '▶ 开始';
+    updateTimerMode();
+    updateTimerDisplay();
+    showToast('计时器已重置', 'warn');
+}
+
+function skipTimer() {
+    if (!timerState.running) return;
+    timerState.remaining = 1;
+    showToast('已跳过本轮', 'warn');
+}
+
+function playBeep() {
+    ensureAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = 880;
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    osc.start(now);
+    osc.stop(now + 0.6);
+}
+
+document.getElementById('timerStart').addEventListener('click', startTimer);
+document.getElementById('timerReset').addEventListener('click', resetTimer);
+document.getElementById('timerSkip').addEventListener('click', skipTimer);
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const min = parseInt(btn.dataset.min);
+        timerState.workMin = min;
+        timerState.breakMin = Math.max(3, Math.round(min / 5));
+        if (!timerState.running) {
+            timerState.remaining = min * 60;
+            timerState.mode = 'focus';
+            updateTimerDisplay();
+            updateTimerMode();
+        }
+        showToast(`已切换到 ${min}/${timerState.breakMin} 模式`, 'gold');
+    });
+});
+
+updateTimerDisplay();
+updateTimerMode();
+updateStats();
+
+/* ============== 全屏专注模式 ============== */
+const focusOverlay = document.getElementById('focusOverlay');
+document.getElementById('focusModeBtn').addEventListener('click', () => {
+    focusOverlay.classList.add('visible');
+    document.body.classList.add('focus-mode');
+    // 自动启动番茄钟
+    if (!timerState.running) startTimer();
+});
+document.getElementById('focusClose').addEventListener('click', exitFocus);
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && focusOverlay.classList.contains('visible')) {
+        exitFocus();
+    }
+});
+function exitFocus() {
+    focusOverlay.classList.remove('visible');
+    document.body.classList.remove('focus-mode');
+}
+
+/* ============== 声波可视化 ============== */
+const vizCanvas = document.getElementById('visualizer');
+const vctx = vizCanvas.getContext('2d');
+function resizeViz() {
+    vizCanvas.width = vizCanvas.offsetWidth * 2;
+    vizCanvas.height = 240;
+}
+resizeViz();
+window.addEventListener('resize', resizeViz);
+
+function drawViz() {
+    const w = vizCanvas.width;
+    const h = vizCanvas.height;
+    vctx.clearRect(0, 0, w, h);
+    // 背景
+    vctx.fillStyle = 'rgba(0,0,0,0.3)';
+    vctx.fillRect(0, 0, w, h);
+
+    if (analyser) {
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(data);
+        const barCount = 64;
+        const step = Math.floor(data.length / barCount);
+        const barWidth = w / barCount;
+        for (let i = 0; i < barCount; i++) {
+            const v = data[i * step] / 255;
+            const barH = v * h * 0.9;
+            const x = i * barWidth;
+            const y = (h - barH) / 2;
+            // 渐变
+            const grad = vctx.createLinearGradient(0, y, 0, y + barH);
+            grad.addColorStop(0, '#00f5ff');
+            grad.addColorStop(0.5, '#b026ff');
+            grad.addColorStop(1, '#ff2d95');
+            vctx.fillStyle = grad;
+            vctx.fillRect(x + 1, y, barWidth - 2, barH);
+        }
+    } else {
+        // 静止波形
+        vctx.strokeStyle = 'rgba(0,245,255,0.3)';
+        vctx.lineWidth = 2;
+        vctx.beginPath();
+        const t = Date.now() / 1000;
+        for (let x = 0; x < w; x += 4) {
+            const y = h / 2 + Math.sin(x * 0.02 + t) * 10;
+            if (x === 0) vctx.moveTo(x, y);
+            else vctx.lineTo(x, y);
+        }
+        vctx.stroke();
+    }
+    requestAnimationFrame(drawViz);
+}
+drawViz();
+
+/* ============== Toast ============== */
+function showToast(text, type = '') {
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2100);
+}
+
+/* ============== 首次点击提示 ============== */
+let firstClick = true;
+document.body.addEventListener('click', () => {
+    if (firstClick) {
+        firstClick = false;
+        ensureAudio();
+    }
+}, { once: false });
+</script>
+</body>
+</html>
